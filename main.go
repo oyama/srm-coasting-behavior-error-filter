@@ -77,6 +77,6 @@ func main() {
 		}
 	}
 
-	buf, _ := xml.MarshalIndent(pwx, "", "  ")
+	buf, _ := xml.MarshalIndent(pwx, "", "    ")
 	fmt.Println(string(buf))
 }
