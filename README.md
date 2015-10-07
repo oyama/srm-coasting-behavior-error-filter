@@ -1,1 +1,1 @@
-# trainingpeaks-da-srm-cleaner
+# SRM coasting behavior error filter
