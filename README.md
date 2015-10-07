@@ -1,1 +1,1 @@
-# SRM coasting behavior error filter
+# SRM coasting error filter
