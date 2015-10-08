@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 type Device struct {
@@ -61,7 +62,16 @@ type Pwx struct {
 }
 
 func main() {
-	xmldoc, _ := ioutil.ReadAll(os.Stdin)
+	inFile, err := os.Open(os.Args[1])
+	if err != nil {
+		panic(err)
+	}
+	defer inFile.Close()
+
+	xmldoc, err := ioutil.ReadAll(inFile)
+	if err != nil {
+		panic(err)
+	}
 	pwx := Pwx{}
 	xml.Unmarshal(xmldoc, &pwx)
 	w := pwx.Workout
@@ -77,6 +87,16 @@ func main() {
 		}
 	}
 
-	buf, _ := xml.MarshalIndent(pwx, "", "    ")
-	fmt.Println(string(buf))
+	buf, err := xml.MarshalIndent(pwx, "", "    ")
+	if err != nil {
+		panic(err)
+	}
+	outPath := strings.Replace(os.Args[1], ".pwx", "-1.pwx", 1)
+	outFile, err := os.OpenFile(outPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0666)
+	if err != nil {
+		panic(err)
+	}
+	outFile.Write(buf)
+	outFile.Close()
+	fmt.Println(outPath)
 }
