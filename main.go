@@ -61,19 +61,23 @@ type Pwx struct {
 	Workout Workout
 }
 
-func main() {
-	inFile, err := os.Open(os.Args[1])
+func loadPwxFile(path string) (*Pwx, error) {
+	inFile, err := os.Open(path)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer inFile.Close()
 
 	xmldoc, err := ioutil.ReadAll(inFile)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	pwx := Pwx{}
 	xml.Unmarshal(xmldoc, &pwx)
+	return &pwx, nil
+}
+
+func removeCoastingError(pwx *Pwx) {
 	w := pwx.Workout
 	for i := 0; i < len(w.Sample); i++ {
 		if i < 2 {
@@ -86,17 +90,46 @@ func main() {
 			w.Sample[i-1].Cad = 0
 		}
 	}
+}
 
+func createNewFileName(origPath string) (outPath string, err error) {
+	outPath = strings.Replace(os.Args[1], ".pwx", "-1.pwx", 1)
+	return outPath, nil
+}
+
+func savePwxFile(pwx *Pwx, outPath string) error {
 	buf, err := xml.MarshalIndent(pwx, "", "    ")
 	if err != nil {
-		panic(err)
+		return err
 	}
-	outPath := strings.Replace(os.Args[1], ".pwx", "-1.pwx", 1)
 	outFile, err := os.OpenFile(outPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0666)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	outFile.Write(buf)
+	fmt.Println(outPath)
+	return nil
+}
+
+func main() {
+	if len(os.Args) <= 1 {
+		fmt.Printf("Usage: srm-coasting-error-filter /path/to/TrainingPeaks-PWX-file.pwx\n")
+		os.Exit(1)
+	}
+	pwx, err := loadPwxFile(os.Args[1])
 	if err != nil {
 		panic(err)
 	}
-	outFile.Write(buf)
-	outFile.Close()
-	fmt.Println(outPath)
+	removeCoastingError(pwx)
+
+	outPath, err := createNewFileName(os.Args[1])
+	if err != nil {
+		panic(err)
+	}
+	err = savePwxFile(pwx, outPath)
+	if err != nil {
+		panic(err)
+	}
 }
